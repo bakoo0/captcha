@@ -1,0 +1,12 @@
+session_id,site_key,created_at,risk_score,decision,events_count,user_agent,screen_width,screen_height,viewport_width,viewport_height
+sess_g2irulu6bj_mozn8ivr,demo-site,1778409771,0.4967,allow,388,"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",1536,864,1536,742
+sess_g2irulu6bj_mozn8ivr,demo-site,1778409778,0.4967,allow,478,"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",1536,864,1536,742
+sess_g2irulu6bj_mozn8ivr,demo-site,1778409781,0.4867,allow,525,"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",1536,864,1536,742
+sess_g2irulu6bj_mozn8ivr,demo-site,1778409782,0.4833,allow,535,"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",1536,864,1536,742
+sess_ewoonqatzri_mozn9rlj,demo-site,1778409792,0.7833,show_captcha,84,"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",1536,864,1536,742
+sess_ckp8jg20rh_mozne2sv,demo-site,1778409995,0.7167,show_captcha,64,"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",1536,864,1536,742
+sess_u9m1e2pk63j_moznefkc,demo-site,1778410008,0.8,show_captcha,34,"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",1536,864,1536,742
+sess_881dwbj2baw_mozneou6,demo-site,1778410021,0.9333,hard_captcha,39,"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",1536,864,1536,742
+sess_th30od7m8p_moznf4xc,demo-site,1778410255,0.7333,show_captcha,62,"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",1536,864,942,742
+sess_th30od7m8p_moznf4xc,demo-site,1778410439,0.61,show_captcha,301,"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",1536,864,942,742
+sess_z4ciddwo8di_moznwqmy,demo-site,1778410865,0.7933,show_captcha,96,"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",1536,864,1536,742
