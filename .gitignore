@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 .venv/
 __pycache__/
 *.pyc
@@ -8,3 +9,10 @@ data/runtime_sessions.csv
 .DS_Store
 .vscode/
 .idea/
+=======
+node_modules/
+.env
+__pycache__/
+*.pyc
+.DS_Store
+>>>>>>> d7f8d2d9b84b7880ee18de35a725acc758770c1e
