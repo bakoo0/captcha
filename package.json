@@ -1,0 +1,13 @@
+{
+  "name": "behavior-lab-backend",
+  "version": "1.0.0",
+  "description": "Adaptive behavioral CAPTCHA backend and demo",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}
