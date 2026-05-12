@@ -205,7 +205,9 @@
   <main class="page">
     <section class="content">
       <span class="badge">Behavioral Protection Active</span>
+
       <h1>Protected Website Page</h1>
+
       <p>
         The behavioral security widget works silently in the background.
         Verification appears only when the system detects medium or high risk.
@@ -237,6 +239,7 @@
 
     let alreadyChecked = false;
     let captchaVisible = false;
+    let checkTimer = null;
 
     BehaviorCaptcha.init({
       endpoint: window.location.origin,
@@ -255,12 +258,40 @@
       captchaContainer.innerHTML = "";
     }
 
-    async function runBackgroundRiskCheck() {
-      if (alreadyChecked || captchaVisible) return;
-
+    function getSessionDurationMs() {
       const events = BehaviorCaptcha.getEvents();
 
-      if (events.length < 30) {
+      if (!events.length) {
+        return 0;
+      }
+
+      const times = events.map(function (event) {
+        return event.t || 0;
+      });
+
+      return Math.max.apply(null, times) - Math.min.apply(null, times);
+    }
+
+    async function runBackgroundRiskCheck() {
+      if (alreadyChecked || captchaVisible) {
+        return;
+      }
+
+      const events = BehaviorCaptcha.getEvents();
+      const durationMs = getSessionDurationMs();
+
+      console.log("Behavior check waiting:", {
+        events: events.length,
+        durationMs: durationMs
+      });
+
+      if (events.length < 120) {
+        console.log("Waiting: not enough behavior events yet.");
+        return;
+      }
+
+      if (durationMs < 5000) {
+        console.log("Waiting: session duration is too short.");
         return;
       }
 
@@ -271,6 +302,7 @@
         console.log("Background ML result:", result);
 
         if (result.decision === "allow") {
+          console.log("Low risk detected. User continues without CAPTCHA.");
           return;
         }
 
@@ -287,24 +319,35 @@
           openCaptcha();
           return;
         }
+
+        console.warn("Unknown decision:", result.decision);
+        alreadyChecked = false;
       } catch (error) {
         console.error("Background verification failed:", error);
+        alreadyChecked = false;
       }
     }
 
-    setTimeout(runBackgroundRiskCheck, 6000);
+    function scheduleRiskCheck() {
+      if (alreadyChecked || captchaVisible) {
+        return;
+      }
 
-    window.addEventListener("click", function () {
-      setTimeout(runBackgroundRiskCheck, 1000);
-    });
+      clearTimeout(checkTimer);
 
-    window.addEventListener("scroll", function () {
-      setTimeout(runBackgroundRiskCheck, 1000);
-    });
+      checkTimer = setTimeout(function () {
+        runBackgroundRiskCheck();
+      }, 4000);
+    }
 
-    window.addEventListener("keydown", function () {
-      setTimeout(runBackgroundRiskCheck, 1000);
-    });
+    setTimeout(function () {
+      runBackgroundRiskCheck();
+    }, 10000);
+
+    window.addEventListener("click", scheduleRiskCheck);
+    window.addEventListener("scroll", scheduleRiskCheck);
+    window.addEventListener("keydown", scheduleRiskCheck);
+    window.addEventListener("mousemove", scheduleRiskCheck);
 
     window.addEventListener("behaviorcaptcha:verified", function () {
       closeCaptcha();
