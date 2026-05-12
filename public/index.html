@@ -290,7 +290,7 @@
         return;
       }
 
-      if (durationMs < 5000) {
+      if (durationMs < 10000) {
         console.log("Waiting: session duration is too short.");
         return;
       }
@@ -337,7 +337,7 @@
 
       checkTimer = setTimeout(function () {
         runBackgroundRiskCheck();
-      }, 4000);
+      }, 6000);
     }
 
     setTimeout(function () {

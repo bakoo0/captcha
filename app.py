@@ -290,8 +290,8 @@ def predict_risk(events: List[Dict[str, Any]]) -> Dict[str, Any]:
 
     score = max(0.0, min(1.0, score))
 
-    allow_max = 0.50
-    captcha_max = 0.80
+    allow_max = 0.70
+    captcha_max = 0.85
 
     if score <= allow_max:
         decision = "allow"
