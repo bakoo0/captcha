@@ -28,7 +28,7 @@
 
     .content {
       width: 100%;
-      max-width: 720px;
+      max-width: 760px;
       background: #ffffff;
       border: 1px solid #dbe3ee;
       border-radius: 26px;
@@ -56,7 +56,7 @@
 
     p {
       margin: 0 auto;
-      max-width: 560px;
+      max-width: 600px;
       color: #6b7280;
       font-size: 15px;
       line-height: 1.7;
@@ -76,122 +76,63 @@
       border: 1px solid #e5e7eb;
     }
 
-    .captcha-overlay {
-      position: fixed;
-      inset: 0;
-      display: none;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-      background: rgba(15, 23, 42, 0.55);
-      backdrop-filter: blur(6px);
-      z-index: 9999;
-    }
-
-    .captcha-overlay.active {
+    .actions {
+      margin-top: 28px;
       display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
     }
 
-    .captcha-modal {
-      width: 100%;
-      max-width: 560px;
-      background: #ffffff;
-      border-radius: 24px;
-      padding: 22px;
-      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
-      animation: popIn 0.25s ease-out;
-    }
-
-    @keyframes popIn {
-      from {
-        opacity: 0;
-        transform: translateY(10px) scale(0.98);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
-    }
-
-    .bcaptcha-box {
-      padding: 0;
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       border: none;
-      background: #ffffff;
-    }
-
-    .bcaptcha-title {
-      font-size: 20px;
-      font-weight: 900;
-      margin-bottom: 8px;
-    }
-
-    .bcaptcha-instruction {
-      margin: 0 0 16px;
-      color: #4b5563;
-      font-size: 14px;
-      line-height: 1.5;
-    }
-
-    .bcaptcha-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-    }
-
-    .bcaptcha-item {
-      border: 2px solid transparent;
       border-radius: 14px;
-      overflow: hidden;
-      background: #f8fafc;
-      cursor: pointer;
-      padding: 0;
-    }
-
-    .bcaptcha-item.selected {
-      border-color: #2563eb;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
-    }
-
-    .bcaptcha-item img {
-      width: 100%;
-      height: 120px;
-      display: block;
-      object-fit: cover;
-    }
-
-    .bcaptcha-verify {
-      margin-top: 16px;
-      width: 100%;
-      border: none;
-      border-radius: 12px;
-      padding: 13px 16px;
+      padding: 13px 18px;
       background: #111827;
-      color: white;
+      color: #ffffff;
+      font-size: 14px;
       font-weight: 800;
+      text-decoration: none;
       cursor: pointer;
     }
 
-    .bcaptcha-result {
-      margin-top: 12px;
-      font-size: 13px;
-      font-weight: 800;
+    .btn.secondary {
+      background: #2563eb;
     }
 
-    .bcaptcha-result.success {
-      color: #166534;
+    .form-box {
+      margin-top: 28px;
+      padding: 22px;
+      border-radius: 20px;
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      text-align: left;
     }
 
-    .bcaptcha-result.error {
-      color: #991b1b;
+    .form-box h2 {
+      margin: 0 0 14px;
+      font-size: 18px;
+    }
+
+    .form-box input {
+      width: 100%;
+      margin-bottom: 12px;
+      padding: 13px 14px;
+      border-radius: 12px;
+      border: 1px solid #d1d5db;
+      font-size: 14px;
+    }
+
+    .form-box button {
+      width: 100%;
     }
 
     @media (max-width: 560px) {
       .fake-area {
         grid-template-columns: 1fr;
-      }
-
-      .bcaptcha-grid {
-        grid-template-columns: repeat(2, 1fr);
       }
 
       h1 {
@@ -209,8 +150,9 @@
       <h1>Protected Website Page</h1>
 
       <p>
-        The behavioral security widget works silently in the background.
-        Verification appears only when the system detects medium or high risk.
+        The behavioral security widget works invisibly in the background.
+        It collects interaction behavior across the page and triggers verification
+        only before protected actions such as Login, Register, or Submit.
       </p>
 
       <div class="fake-area">
@@ -218,140 +160,30 @@
         <div class="fake-card"></div>
         <div class="fake-card"></div>
       </div>
+
+      <div class="actions">
+        <a href="/login" class="btn" data-bc-protect="link">Login</a>
+        <a href="/register" class="btn secondary" data-bc-protect="link">Register</a>
+      </div>
+
+      <div class="form-box">
+        <h2>Protected Login Form</h2>
+
+        <form data-bc-protect="submit" action="/login" method="POST">
+          <input type="email" name="email" placeholder="Email" required />
+          <input type="password" name="password" placeholder="Password" required />
+          <button class="btn" type="submit">Login with verification</button>
+        </form>
+      </div>
     </section>
   </main>
-
-  <div id="captcha-overlay" class="captcha-overlay">
-    <div class="captcha-modal">
-      <div id="behavior-captcha-container"></div>
-    </div>
-  </div>
 
   <script
     src="/widget/behavior-captcha-widget.js"
     data-endpoint=""
-    data-site-key="demo-site">
-  </script>
-
-  <script>
-    const captchaOverlay = document.getElementById("captcha-overlay");
-    const captchaContainer = document.getElementById("behavior-captcha-container");
-
-    let alreadyChecked = false;
-    let captchaVisible = false;
-    let checkTimer = null;
-
-    BehaviorCaptcha.init({
-      endpoint: window.location.origin,
-      siteKey: "demo-site",
-      debug: true
-    });
-
-    function openCaptcha() {
-      captchaVisible = true;
-      captchaOverlay.classList.add("active");
-    }
-
-    function closeCaptcha() {
-      captchaVisible = false;
-      captchaOverlay.classList.remove("active");
-      captchaContainer.innerHTML = "";
-    }
-
-    function getSessionDurationMs() {
-      const events = BehaviorCaptcha.getEvents();
-
-      if (!events.length) {
-        return 0;
-      }
-
-      const times = events.map(function (event) {
-        return event.t || 0;
-      });
-
-      return Math.max.apply(null, times) - Math.min.apply(null, times);
-    }
-
-    async function runBackgroundRiskCheck() {
-      if (alreadyChecked || captchaVisible) {
-        return;
-      }
-
-      const events = BehaviorCaptcha.getEvents();
-      const durationMs = getSessionDurationMs();
-
-      console.log("Behavior check waiting:", {
-        events: events.length,
-        durationMs: durationMs
-      });
-
-      if (events.length < 120) {
-        console.log("Waiting: not enough behavior events yet.");
-        return;
-      }
-
-      if (durationMs < 10000) {
-        console.log("Waiting: session duration is too short.");
-        return;
-      }
-
-      alreadyChecked = true;
-
-      try {
-        const result = await BehaviorCaptcha.evaluate();
-        console.log("Background ML result:", result);
-
-        if (result.decision === "allow") {
-          console.log("Low risk detected. User continues without CAPTCHA.");
-          return;
-        }
-
-        if (result.decision === "show_captcha") {
-          const challenge = await BehaviorCaptcha.loadCaptcha("medium");
-          BehaviorCaptcha.renderCaptcha(captchaContainer, challenge);
-          openCaptcha();
-          return;
-        }
-
-        if (result.decision === "hard_captcha") {
-          const challenge = await BehaviorCaptcha.loadCaptcha("hard");
-          BehaviorCaptcha.renderCaptcha(captchaContainer, challenge);
-          openCaptcha();
-          return;
-        }
-
-        console.warn("Unknown decision:", result.decision);
-        alreadyChecked = false;
-      } catch (error) {
-        console.error("Background verification failed:", error);
-        alreadyChecked = false;
-      }
-    }
-
-    function scheduleRiskCheck() {
-      if (alreadyChecked || captchaVisible) {
-        return;
-      }
-
-      clearTimeout(checkTimer);
-
-      checkTimer = setTimeout(function () {
-        runBackgroundRiskCheck();
-      }, 6000);
-    }
-
-    setTimeout(function () {
-      runBackgroundRiskCheck();
-    }, 10000);
-
-    window.addEventListener("click", scheduleRiskCheck);
-    window.addEventListener("scroll", scheduleRiskCheck);
-    window.addEventListener("keydown", scheduleRiskCheck);
-    window.addEventListener("mousemove", scheduleRiskCheck);
-
-    window.addEventListener("behaviorcaptcha:verified", function () {
-      closeCaptcha();
-    });
+    data-site-key="demo-site"
+    data-auto-protect="true"
+    data-debug="true">
   </script>
 </body>
 </html>

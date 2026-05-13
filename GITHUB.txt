@@ -1,6 +1,0 @@
-git status
-git add .
-git commit -m "Remove Docker deployment files"
-git push
-git log --oneline -7
-Git hub
