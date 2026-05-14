@@ -13,8 +13,9 @@ import numpy as np
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pymongo import MongoClient
 
 
@@ -76,15 +77,15 @@ app.mount("/static", StaticFiles(directory=str(ROOT / "static")), name="static")
 class RiskRequest(BaseModel):
     sessionId: Optional[str] = None
     siteKey: Optional[str] = "demo-site"
-    events: List[Dict[str, Any]] = []
-    meta: Dict[str, Any] = {}
+    events: List[Dict[str, Any]] = Field(default_factory=list)
+    meta: Dict[str, Any] = Field(default_factory=dict)
 
 
 class CaptchaVerifyRequest(BaseModel):
     sessionId: str
     challengeId: str
-    selectedIds: List[str]
-    captchaEvents: Optional[List[Dict[str, Any]]] = []
+    selectedIds: List[str] = Field(default_factory=list)
+    captchaEvents: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
 
 
 if not MODEL_PATH.exists():
@@ -629,6 +630,21 @@ def captcha_verify(payload: CaptchaVerifyRequest):
         "success": success,
         "message": "CAPTCHA passed" if success else "Incorrect selection"
     }
+
+
+@app.get("/login")
+def redirect_login():
+    return RedirectResponse(url="/", status_code=302)
+
+
+@app.get("/register")
+def redirect_register():
+    return RedirectResponse(url="/", status_code=302)
+
+
+@app.get("/checkout")
+def redirect_checkout():
+    return RedirectResponse(url="/", status_code=302)
 
 
 app.mount("/", StaticFiles(directory=str(ROOT / "public"), html=True), name="public")
