@@ -29,17 +29,36 @@ RUNTIME_CSV_PATH = ROOT / "data" / "runtime_sessions.csv"
 MONGO_URI = os.getenv("MONGO_URI", "")
 MONGO_DB = os.getenv("MONGO_DB", "adaptive_captcha")
 
+
+mongo_client = None
 mongo_db = None
+
+
+def is_mongodb_connected() -> bool:
+    if mongo_client is None:
+        return False
+
+    try:
+        mongo_client.admin.command("ping")
+        return True
+    except Exception:
+        return False
+
 
 if MONGO_URI:
     try:
-        mongo_client = MongoClient(MONGO_URI)
+        mongo_client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+        mongo_client.admin.command("ping")
         mongo_db = mongo_client[MONGO_DB]
-    except Exception:
+        print("MongoDB connected successfully.")
+    except Exception as error:
+        print("MongoDB connection failed:", error)
+        mongo_client = None
         mongo_db = None
 
 
 app = FastAPI(title="Adaptive CAPTCHA API")
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -71,6 +90,7 @@ class CaptchaVerifyRequest(BaseModel):
 if not MODEL_PATH.exists():
     raise FileNotFoundError(f"ML model not found: {MODEL_PATH}")
 
+
 model_bundle = joblib.load(MODEL_PATH)
 
 model = model_bundle["model"]
@@ -91,18 +111,22 @@ def safe_float(value: Any, default: float = 0.0) -> float:
 
 def safe_mean(values: List[float]) -> float:
     values = [v for v in values if isinstance(v, (int, float))]
+
     if not values:
         return 0.0
+
     return sum(values) / len(values)
 
 
 def safe_std(values: List[float]) -> float:
     values = [v for v in values if isinstance(v, (int, float))]
+
     if len(values) < 2:
         return 0.0
 
     mean_value = safe_mean(values)
     variance = sum((v - mean_value) ** 2 for v in values) / len(values)
+
     return math.sqrt(variance)
 
 
@@ -151,7 +175,9 @@ def extract_features(events: List[Dict[str, Any]]) -> Dict[str, float]:
         first_t, first_x, first_y = mouse_points[0]
         last_t, last_x, last_y = mouse_points[-1]
 
-        mouse_displacement = math.sqrt((last_x - first_x) ** 2 + (last_y - first_y) ** 2)
+        mouse_displacement = math.sqrt(
+            (last_x - first_x) ** 2 + (last_y - first_y) ** 2
+        )
 
         previous_angle = None
 
@@ -257,7 +283,9 @@ def extract_features(events: List[Dict[str, Any]]) -> Dict[str, float]:
         "scroll_n": float(len(scroll_events)),
         "scroll_delta_mean": float(safe_mean(scroll_deltas)),
         "scroll_delta_std": float(safe_std(scroll_deltas)),
-        "scroll_delta_max": float(max([abs(v) for v in scroll_deltas]) if scroll_deltas else 0.0),
+        "scroll_delta_max": float(
+            max([abs(v) for v in scroll_deltas]) if scroll_deltas else 0.0
+        ),
         "scroll_bursts": float(scroll_bursts),
 
         "key_n": float(len(keydown_events)),
@@ -279,9 +307,11 @@ def extract_features(events: List[Dict[str, Any]]) -> Dict[str, float]:
 def predict_risk(events: List[Dict[str, Any]]) -> Dict[str, Any]:
     features = extract_features(events)
 
-    x = np.array([
-        [features.get(col, 0.0) for col in feature_cols]
-    ])
+    x = np.array(
+        [
+            [features.get(col, 0.0) for col in feature_cols]
+        ]
+    )
 
     if hasattr(model, "predict_proba"):
         score = float(model.predict_proba(x)[0][1])
@@ -312,7 +342,11 @@ def predict_risk(events: List[Dict[str, Any]]) -> Dict[str, Any]:
     }
 
 
-def save_runtime_csv(session_id: str, payload: RiskRequest, result: Dict[str, Any]) -> None:
+def save_runtime_csv(
+    session_id: str,
+    payload: RiskRequest,
+    result: Optional[Dict[str, Any]] = None
+) -> None:
     RUNTIME_CSV_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     file_exists = RUNTIME_CSV_PATH.exists()
@@ -344,8 +378,8 @@ def save_runtime_csv(session_id: str, payload: RiskRequest, result: Dict[str, An
             "session_id": session_id,
             "site_key": payload.siteKey,
             "created_at": int(time.time()),
-            "risk_score": result["score"],
-            "decision": result["decision"],
+            "risk_score": result.get("score", "") if result else "",
+            "decision": result.get("decision", "") if result else "",
             "events_count": len(payload.events),
             "user_agent": meta.get("userAgent", ""),
             "screen_width": meta.get("screenWidth", ""),
@@ -373,22 +407,25 @@ def save_session(session_id: str, payload: RiskRequest, result: Dict[str, Any]) 
                 "decision": result["decision"],
                 "thresholds": result["thresholds"],
                 "model_source": result["model_source"],
-                "features": result["features"]
+                "features": result["features"],
+                "events_count": len(payload.events)
             }
         },
         upsert=True
     )
 
     if payload.events:
-        mongo_db["behavior_events"].insert_many([
-            {
-                "session_id": session_id,
-                "site_key": payload.siteKey,
-                "event": event,
-                "created_at": int(time.time())
-            }
-            for event in payload.events
-        ])
+        mongo_db["behavior_events"].insert_many(
+            [
+                {
+                    "session_id": session_id,
+                    "site_key": payload.siteKey,
+                    "event": event,
+                    "created_at": int(time.time())
+                }
+                for event in payload.events
+            ]
+        )
 
 
 def load_pareidolia_pool() -> Dict[str, Any]:
@@ -408,9 +445,57 @@ def health():
         "ok": True,
         "model_loaded": MODEL_PATH.exists(),
         "model_source": model_name,
-        "mongodb_connected": mongo_db is not None,
+        "mongodb_connected": is_mongodb_connected(),
         "pareidolia_pool_loaded": PAREIDOLIA_PATH.exists()
     }
+
+
+@app.post("/api/events")
+def save_events(payload: RiskRequest):
+    session_id = payload.sessionId or f"sess_{uuid.uuid4().hex}"
+
+    try:
+        if mongo_db is not None:
+            mongo_db["sessions"].update_one(
+                {"_id": session_id},
+                {
+                    "$set": {
+                        "site_key": payload.siteKey,
+                        "last_event_at": int(time.time()),
+                        "meta": payload.meta or {},
+                        "events_count": len(payload.events)
+                    },
+                    "$setOnInsert": {
+                        "created_at": int(time.time())
+                    }
+                },
+                upsert=True
+            )
+
+            if payload.events:
+                mongo_db["behavior_events"].insert_many(
+                    [
+                        {
+                            "session_id": session_id,
+                            "site_key": payload.siteKey,
+                            "event": event,
+                            "created_at": int(time.time())
+                        }
+                        for event in payload.events
+                    ]
+                )
+        else:
+            save_runtime_csv(session_id, payload, None)
+
+        return {
+            "ok": True,
+            "sessionId": session_id,
+            "events_saved": len(payload.events),
+            "mongodb_connected": is_mongodb_connected()
+        }
+
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=str(error))
 
 
 @app.post("/api/risk-score")
@@ -459,6 +544,7 @@ def captcha_challenge(sessionId: str, level: str = "medium"):
 
     for item in correct_items:
         correct_ids.append(item["id"])
+
         items.append({
             "id": item["id"],
             "src": item["src"],
@@ -504,10 +590,12 @@ def captcha_verify(payload: CaptchaVerifyRequest):
     challenge = None
 
     if mongo_db is not None:
-        challenge = mongo_db["captcha_challenges"].find_one({
-            "_id": payload.challengeId,
-            "session_id": payload.sessionId
-        })
+        challenge = mongo_db["captcha_challenges"].find_one(
+            {
+                "_id": payload.challengeId,
+                "session_id": payload.sessionId
+            }
+        )
 
     if challenge is None:
         challenge = IN_MEMORY_CHALLENGES.get(payload.challengeId)
@@ -544,151 +632,3 @@ def captcha_verify(payload: CaptchaVerifyRequest):
 
 
 app.mount("/", StaticFiles(directory=str(ROOT / "public"), html=True), name="public")
-
-# AUTH API START
-# Login/Register API with MongoDB user profiles
-
-from datetime import datetime, timezone
-from fastapi import HTTPException
-from pydantic import BaseModel
-from passlib.context import CryptContext
-import inspect
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-
-class RegisterRequest(BaseModel):
-    name: str
-    email: str
-    password: str
-
-
-class LoginRequest(BaseModel):
-    email: str
-    password: str
-
-
-async def maybe_await(value):
-    if inspect.isawaitable(value):
-        return await value
-    return value
-
-
-def get_users_collection():
-    db = globals().get("mongo_db", None)
-
-    if db is None:
-        raise HTTPException(
-            status_code=503,
-            detail="MongoDB is not connected. Check MONGO_URI and MONGO_DB in Render Environment."
-        )
-
-    return db["users"]
-
-
-def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
-
-
-def verify_password(password: str, password_hash: str) -> bool:
-    return pwd_context.verify(password, password_hash)
-
-
-@app.post("/api/auth/register")
-async def register_user(payload: RegisterRequest):
-    users = get_users_collection()
-
-    name = payload.name.strip()
-    email = payload.email.strip().lower()
-    password = payload.password.strip()
-
-    if not name:
-        raise HTTPException(status_code=400, detail="Name is required.")
-
-    if not email or "@" not in email:
-        raise HTTPException(status_code=400, detail="Valid email is required.")
-
-    if len(password) < 6:
-        raise HTTPException(
-            status_code=400,
-            detail="Password must contain at least 6 characters."
-        )
-
-    existing_user = await maybe_await(users.find_one({"email": email}))
-
-    if existing_user:
-        raise HTTPException(
-            status_code=409,
-            detail="User with this email already exists."
-        )
-
-    now = datetime.now(timezone.utc)
-
-    user_doc = {
-        "name": name,
-        "email": email,
-        "password_hash": hash_password(password),
-        "created_at": now,
-        "last_login_at": None,
-        "source": "humanity-checkpoint-demo"
-    }
-
-    result = await maybe_await(users.insert_one(user_doc))
-
-    return {
-        "ok": True,
-        "message": "User registered successfully.",
-        "user": {
-            "id": str(result.inserted_id),
-            "name": name,
-            "email": email
-        }
-    }
-
-
-@app.post("/api/auth/login")
-async def login_user(payload: LoginRequest):
-    users = get_users_collection()
-
-    email = payload.email.strip().lower()
-    password = payload.password.strip()
-
-    if not email or not password:
-        raise HTTPException(
-            status_code=400,
-            detail="Email and password are required."
-        )
-
-    user = await maybe_await(users.find_one({"email": email}))
-
-    if not user:
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid email or password."
-        )
-
-    if not verify_password(password, user.get("password_hash", "")):
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid email or password."
-        )
-
-    now = datetime.now(timezone.utc)
-
-    await maybe_await(
-        users.update_one(
-            {"_id": user["_id"]},
-            {"$set": {"last_login_at": now}}
-        )
-    )
-
-    return {
-        "ok": True,
-        "message": "Login successful.",
-        "user": {
-            "id": str(user["_id"]),
-            "name": user.get("name"),
-            "email": user.get("email")
-        }
-    }
-
