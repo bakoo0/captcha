@@ -4,7 +4,7 @@
   const DEFAULTS = {
     endpoint: window.location.origin,
     siteKey: "demo-site",
-    maxEvents: 1000,
+    maxEvents: 3000,
     mousemoveThrottleMs: 35,
     autoStart: true,
     autoProtect: true,

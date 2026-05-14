@@ -76,7 +76,7 @@ app.mount("/static", StaticFiles(directory=str(ROOT / "static")), name="static")
 
 class RiskRequest(BaseModel):
     sessionId: Optional[str] = None
-    siteKey: Optional[str] = "demo-site"
+    siteKey: Optional[str] = "unknown-site"
     events: List[Dict[str, Any]] = Field(default_factory=list)
     meta: Dict[str, Any] = Field(default_factory=dict)
 
