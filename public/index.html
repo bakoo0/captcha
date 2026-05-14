@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Protected Page</title>
+  <title>Adaptive CAPTCHA Service</title>
 
   <style>
     * {
@@ -28,11 +28,11 @@
 
     .content {
       width: 100%;
-      max-width: 760px;
+      max-width: 900px;
       background: #ffffff;
       border: 1px solid #dbe3ee;
       border-radius: 26px;
-      padding: 34px;
+      padding: 36px;
       box-shadow: 0 18px 45px rgba(15, 23, 42, 0.10);
       text-align: center;
     }
@@ -46,97 +46,78 @@
       font-size: 12px;
       font-weight: 800;
       margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
     }
 
     h1 {
-      margin: 0 0 12px;
-      font-size: 34px;
+      margin: 0 0 14px;
+      font-size: 38px;
       line-height: 1.15;
     }
 
     p {
       margin: 0 auto;
-      max-width: 600px;
+      max-width: 720px;
       color: #6b7280;
       font-size: 15px;
       line-height: 1.7;
     }
 
-    .fake-area {
-      margin-top: 28px;
+    .grid {
+      margin-top: 30px;
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 14px;
     }
 
-    .fake-card {
-      height: 120px;
+    .card {
+      padding: 20px;
       border-radius: 18px;
-      background: linear-gradient(135deg, #eef2ff, #f8fafc);
-      border: 1px solid #e5e7eb;
-    }
-
-    .actions {
-      margin-top: 28px;
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border: none;
-      border-radius: 14px;
-      padding: 13px 18px;
-      background: #111827;
-      color: #ffffff;
-      font-size: 14px;
-      font-weight: 800;
-      text-decoration: none;
-      cursor: pointer;
-    }
-
-    .btn.secondary {
-      background: #2563eb;
-    }
-
-    .form-box {
-      margin-top: 28px;
-      padding: 22px;
-      border-radius: 20px;
       background: #f8fafc;
       border: 1px solid #e5e7eb;
       text-align: left;
     }
 
-    .form-box h2 {
-      margin: 0 0 14px;
-      font-size: 18px;
+    .card h3 {
+      margin: 0 0 10px;
+      font-size: 15px;
     }
 
-    .form-box input {
-      width: 100%;
-      margin-bottom: 12px;
-      padding: 13px 14px;
-      border-radius: 12px;
-      border: 1px solid #d1d5db;
-      font-size: 14px;
+    .card p {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.6;
     }
 
-    .form-box button {
-      width: 100%;
+    .code-box {
+      margin-top: 30px;
+      padding: 20px;
+      border-radius: 18px;
+      background: #0f172a;
+      color: #e5e7eb;
+      text-align: left;
+      overflow-x: auto;
+      font-size: 13px;
+      line-height: 1.6;
     }
 
-    @media (max-width: 560px) {
-      .fake-area {
+    code {
+      white-space: pre;
+      font-family: Consolas, monospace;
+    }
+
+    @media (max-width: 700px) {
+      .grid {
         grid-template-columns: 1fr;
       }
 
       h1 {
-        font-size: 28px;
+        font-size: 30px;
+      }
+
+      .content {
+        padding: 24px;
       }
     }
   </style>
@@ -145,44 +126,59 @@
 <body>
   <main class="page">
     <section class="content">
-      <span class="badge">Behavioral Protection Active</span>
+      <span class="badge">Adaptive CAPTCHA Service</span>
 
-      <h1>Protected Website Page</h1>
+      <h1>Behavior-based human verification</h1>
 
       <p>
-        The behavioral security widget works invisibly in the background.
-        It collects interaction behavior across the page and triggers verification
-        only before protected actions such as Login, Register, or Submit.
+        This service provides an embeddable adaptive CAPTCHA widget for external websites.
+        Website owners connect the script to their pages, and the system collects behavioral
+        interaction data in the background. Risk evaluation is triggered only before protected
+        actions such as login, registration, purchase, or form submission.
       </p>
 
-      <div class="fake-area">
-        <div class="fake-card"></div>
-        <div class="fake-card"></div>
-        <div class="fake-card"></div>
+      <div class="grid">
+        <div class="card">
+          <h3>1. Invisible collection</h3>
+          <p>
+            The widget records mouse movement, clicks, scrolling, keyboard activity,
+            focus changes, and page interaction events.
+          </p>
+        </div>
+
+        <div class="card">
+          <h3>2. Risk scoring</h3>
+          <p>
+            Before a protected action, the collected session is sent to the backend
+            and evaluated by the machine learning model.
+          </p>
+        </div>
+
+        <div class="card">
+          <h3>3. Adaptive challenge</h3>
+          <p>
+            Low-risk users continue without interruption, while suspicious sessions
+            receive medium or hard CAPTCHA verification.
+          </p>
+        </div>
       </div>
 
-      <div class="actions">
-        <a href="/login" class="btn" data-bc-protect="link">Login</a>
-        <a href="/register" class="btn secondary" data-bc-protect="link">Register</a>
-      </div>
-
-      <div class="form-box">
-        <h2>Protected Login Form</h2>
-
-        <form data-bc-protect="submit" action="/login" method="POST">
-          <input type="email" name="email" placeholder="Email" required />
-          <input type="password" name="password" placeholder="Password" required />
-          <button class="btn" type="submit">Login with verification</button>
-        </form>
+      <div class="code-box">
+<code>&lt;script
+  src="https://captcha-1-apq7.onrender.com/widget/behavior-captcha-widget.js"
+  data-endpoint="https://captcha-1-apq7.onrender.com"
+  data-site-key="owner-site-001"
+  data-auto-protect="true"
+  data-debug="false"&gt;
+&lt;/script&gt;</code>
       </div>
     </section>
   </main>
 
   <script
     src="/widget/behavior-captcha-widget.js"
-    data-endpoint=""
-    data-site-key="demo-site"
-    data-auto-protect="true"
+    data-site-key="service-landing-page"
+    data-auto-protect="false"
     data-debug="true">
   </script>
 </body>
