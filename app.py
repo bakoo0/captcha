@@ -544,3 +544,151 @@ def captcha_verify(payload: CaptchaVerifyRequest):
 
 
 app.mount("/", StaticFiles(directory=str(ROOT / "public"), html=True), name="public")
+
+# AUTH API START
+# Login/Register API with MongoDB user profiles
+
+from datetime import datetime, timezone
+from fastapi import HTTPException
+from pydantic import BaseModel
+from passlib.context import CryptContext
+import inspect
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+class RegisterRequest(BaseModel):
+    name: str
+    email: str
+    password: str
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+async def maybe_await(value):
+    if inspect.isawaitable(value):
+        return await value
+    return value
+
+
+def get_users_collection():
+    db = globals().get("mongo_db", None)
+
+    if db is None:
+        raise HTTPException(
+            status_code=503,
+            detail="MongoDB is not connected. Check MONGO_URI and MONGO_DB in Render Environment."
+        )
+
+    return db["users"]
+
+
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password)
+
+
+def verify_password(password: str, password_hash: str) -> bool:
+    return pwd_context.verify(password, password_hash)
+
+
+@app.post("/api/auth/register")
+async def register_user(payload: RegisterRequest):
+    users = get_users_collection()
+
+    name = payload.name.strip()
+    email = payload.email.strip().lower()
+    password = payload.password.strip()
+
+    if not name:
+        raise HTTPException(status_code=400, detail="Name is required.")
+
+    if not email or "@" not in email:
+        raise HTTPException(status_code=400, detail="Valid email is required.")
+
+    if len(password) < 6:
+        raise HTTPException(
+            status_code=400,
+            detail="Password must contain at least 6 characters."
+        )
+
+    existing_user = await maybe_await(users.find_one({"email": email}))
+
+    if existing_user:
+        raise HTTPException(
+            status_code=409,
+            detail="User with this email already exists."
+        )
+
+    now = datetime.now(timezone.utc)
+
+    user_doc = {
+        "name": name,
+        "email": email,
+        "password_hash": hash_password(password),
+        "created_at": now,
+        "last_login_at": None,
+        "source": "humanity-checkpoint-demo"
+    }
+
+    result = await maybe_await(users.insert_one(user_doc))
+
+    return {
+        "ok": True,
+        "message": "User registered successfully.",
+        "user": {
+            "id": str(result.inserted_id),
+            "name": name,
+            "email": email
+        }
+    }
+
+
+@app.post("/api/auth/login")
+async def login_user(payload: LoginRequest):
+    users = get_users_collection()
+
+    email = payload.email.strip().lower()
+    password = payload.password.strip()
+
+    if not email or not password:
+        raise HTTPException(
+            status_code=400,
+            detail="Email and password are required."
+        )
+
+    user = await maybe_await(users.find_one({"email": email}))
+
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password."
+        )
+
+    if not verify_password(password, user.get("password_hash", "")):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password."
+        )
+
+    now = datetime.now(timezone.utc)
+
+    await maybe_await(
+        users.update_one(
+            {"_id": user["_id"]},
+            {"$set": {"last_login_at": now}}
+        )
+    )
+
+    return {
+        "ok": True,
+        "message": "Login successful.",
+        "user": {
+            "id": str(user["_id"]),
+            "name": user.get("name"),
+            "email": user.get("email")
+        }
+    }
+
